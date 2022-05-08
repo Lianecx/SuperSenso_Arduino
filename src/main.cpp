@@ -1,6 +1,9 @@
 #include <Arduino.h>
+#include <Wire.h>
+#include <LiquidCrystal.h>
 
 const int buzz = 12;
+const int backlight = 2;
 
 const float freqGreen = 261.626;
 const float freqYel = 329.628;
@@ -25,10 +28,15 @@ int butBlueStatus;
 int userLights[32];
 int randLights[32];
 int count = 2;
+
 boolean randSequence = false;
 boolean onlySound = false;
 boolean win = true;
+
+String mode;
 const int SPEED = 300;
+
+LiquidCrystal lcd(3, A1, A2, A3, A4, A5);
 
 void tone(int ledPin) {
     switch(ledPin) {
@@ -54,9 +62,11 @@ void startGame() {
         delay(50);
     }
     noTone(buzz);
-    Serial.println("Press <GREEN AND YELLOW BUTTON> to start normal game!");
-    Serial.println("Press <RED AND BLUE BUTTON> to start game with random sequences!");
-    Serial.println("Press <YELLOW AND RED BUTTON> to start game without lights (Very hard!)!");
+
+    lcd.clear();
+    lcd.print(" G+Y   R+B  Y+R ");
+    lcd.setCursor(0, 1);
+    lcd.print("Easy Medium Hard");
 
     do {
         butGreenStatus = digitalRead(butGreen);
@@ -64,13 +74,21 @@ void startGame() {
         butRedStatus = digitalRead(butRed);
         butBlueStatus = digitalRead(butBlue);
 
-        if (butGreenStatus == 0 && butYelStatus == 0) randLights[0] = random(8, 12);
-        else if (butRedStatus == 0 && butBlueStatus == 0) randSequence = true;
-        else if(butYelStatus == 0 && butRedStatus == 00) {
+        if (butGreenStatus == 0 && butYelStatus == 0) {
+            mode = "EASY";
+            randLights[0] = random(8, 12);
+        } else if (butRedStatus == 0 && butBlueStatus == 0) {
+            randSequence = true;
+            mode = "MEDIUM";
+        } else if(butYelStatus == 0 && butRedStatus == 00) {
             onlySound = true;
+            mode = "HARD";
             randLights[0] = random(8, 12);
         }
     } while((butGreenStatus == 1 || butYelStatus == 1) && (butRedStatus == 1 || butBlueStatus == 1) && (butYelStatus == 1 || butRedStatus == 1));
+
+    lcd.clear();
+    lcd.print("   " + mode + " MODE  ");
 
     delay(300);
     for(int i=12; i>7; i--) {
@@ -82,11 +100,11 @@ void startGame() {
     delay(1000);
 
     if(onlySound) {
-        digitalWrite(ledYel, HIGH);
-        digitalWrite(ledRed, HIGH);
         for(int i=8; i<13; i++) {
+            digitalWrite(i, HIGH);
             tone(i);
             delay(1000);
+            digitalWrite(i, LOW);
         }
         noTone(buzz);
         delay(1000);
@@ -97,7 +115,11 @@ void end(int correctPin) {
     onlySound = false;
     randSequence = false;
 
-    Serial.println("YOU LOST IN ROUND " + String(count-1));
+    lcd.clear();
+    lcd.print("  YOU LOST IN   ");
+    lcd.setCursor(0, 1);
+    lcd.print("    ROUND " + String(count-1) + "     ");
+
     count = 2;
 
     for(int i=0; i<10; i++) {
@@ -113,14 +135,33 @@ void end(int correctPin) {
     startGame();
 }
 void next() {
-    if(count >= 31) Serial.println("YOU CHEATER!!! THERE'S NO WAY YOU ACTUALLY MADE IT TO ROUND 30?!?!\nI think we'll end it here, cuz youre prob gonna break the game.\nYoure just too good ¯\\_(ツ)_/¯");
-    Serial.println("YOU WON ROUND " + String(count-1));
-    count++;
-    delay(1000);
+    lcd.clear();
+
+    if(count >= 31) {
+        lcd.print("    You beat    ");
+        lcd.setCursor(0, 1);
+        lcd.print(mode + " MODE!");
+
+        delay(5000);
+        startGame();
+    } else {
+        lcd.print("    YOU WON     ");
+        lcd.setCursor(0, 1);
+        lcd.print("    ROUND " + String(count-1) + "     ");
+
+        count++;
+        delay(1000);
+    }
+
 }
 
 void setup() {
-    Serial.begin(9600);
+    lcd.begin(16, 2);
+    lcd.clear();
+    lcd.setBacklightPin(backlight, POSITIVE);
+    lcd.backlight();
+    lcd.display();
+
     randomSeed(analogRead(A0));
 
     pinMode(buzz, OUTPUT);
