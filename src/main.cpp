@@ -1,6 +1,6 @@
-#include <Arduino.h>
 #include <Wire.h>
-#include <LiquidCrystal.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 
 const int buzz = 12;
 const int backlight = 2;
@@ -36,7 +36,7 @@ boolean win = true;
 String mode;
 const int SPEED = 300;
 
-LiquidCrystal lcd(3, A1, A2, A3, A4, A5);
+Adafruit_SSD1306 oled(128, 64, &Wire);
 
 void tone(int ledPin) {
     switch(ledPin) {
@@ -63,10 +63,11 @@ void startGame() {
     }
     noTone(buzz);
 
-    lcd.clear();
-    lcd.print(" G+Y   R+B  Y+R ");
-    lcd.setCursor(0, 1);
-    lcd.print("Easy Medium Hard");
+    oled.clearDisplay();
+    oled.print(" G+Y   R+B  Y+R ");
+    oled.setCursor(0, 1);
+    oled.print("Easy Medium Hard");
+    oled.display();
 
     do {
         butGreenStatus = digitalRead(butGreen);
@@ -87,8 +88,9 @@ void startGame() {
         }
     } while((butGreenStatus == 1 || butYelStatus == 1) && (butRedStatus == 1 || butBlueStatus == 1) && (butYelStatus == 1 || butRedStatus == 1));
 
-    lcd.clear();
-    lcd.print("   " + mode + " MODE  ");
+    oled.clearDisplay();
+    oled.print("   " + mode + " MODE  ");
+    oled.display();
 
     delay(300);
     for(int i=12; i>7; i--) {
@@ -115,10 +117,11 @@ void end(int correctPin) {
     onlySound = false;
     randSequence = false;
 
-    lcd.clear();
-    lcd.print("  YOU LOST IN   ");
-    lcd.setCursor(0, 1);
-    lcd.print("    ROUND " + String(count-1) + "     ");
+    oled.clearDisplay();
+    oled.print("  YOU LOST IN   ");
+    oled.setCursor(0, 1);
+    oled.print("    ROUND " + String(count - 1) + "     ");
+    oled.display();
 
     count = 2;
 
@@ -135,19 +138,21 @@ void end(int correctPin) {
     startGame();
 }
 void next() {
-    lcd.clear();
+    oled.clearDisplay();
 
     if(count >= 31) {
-        lcd.print("    You beat    ");
-        lcd.setCursor(0, 1);
-        lcd.print(mode + " MODE!");
+        oled.print("    You beat    ");
+        oled.setCursor(0, 1);
+        oled.print(mode + " MODE!");
+        oled.display();
 
         delay(5000);
         startGame();
     } else {
-        lcd.print("    YOU WON     ");
-        lcd.setCursor(0, 1);
-        lcd.print("    ROUND " + String(count-1) + "     ");
+        oled.print("    YOU WON     ");
+        oled.setCursor(0, 1);
+        oled.print("    ROUND " + String(count - 1) + "     ");
+        oled.display();
 
         count++;
         delay(1000);
@@ -156,11 +161,9 @@ void next() {
 }
 
 void setup() {
-    lcd.begin(16, 2);
-    lcd.clear();
-    lcd.setBacklightPin(backlight, POSITIVE);
-    lcd.backlight();
-    lcd.display();
+    oled.begin();
+    oled.clearDisplay();
+    oled.display();
 
     randomSeed(analogRead(A0));
 
