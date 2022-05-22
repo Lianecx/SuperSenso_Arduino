@@ -36,7 +36,7 @@ boolean win = true;
 String mode;
 const int SPEED = 300;
 
-Adafruit_SSD1306 oled(128, 64, &Wire);
+Adafruit_SSD1306 oled(128, 64, &Wire, 4);
 
 void tone(int ledPin) {
     switch(ledPin) {
@@ -64,8 +64,11 @@ void startGame() {
     noTone(buzz);
 
     oled.clearDisplay();
-    oled.print(" G+Y   R+B  Y+R ");
-    oled.setCursor(0, 1);
+    oled.setTextSize(2);
+    oled.println("SuperSenso\n");
+
+    oled.setTextSize(1);
+    oled.println("Choose difficulty:\n");
     oled.print("Easy Medium Hard");
     oled.display();
 
@@ -79,17 +82,17 @@ void startGame() {
             mode = "EASY";
             randLights[0] = random(8, 12);
         } else if (butRedStatus == 0 && butBlueStatus == 0) {
-            randSequence = true;
-            mode = "MEDIUM";
-        } else if(butYelStatus == 0 && butRedStatus == 00) {
             onlySound = true;
             mode = "HARD";
             randLights[0] = random(8, 12);
+        } else if(butYelStatus == 0 && butRedStatus == 00) {
+            randSequence = true;
+            mode = "MEDIUM";
         }
     } while((butGreenStatus == 1 || butYelStatus == 1) && (butRedStatus == 1 || butBlueStatus == 1) && (butYelStatus == 1 || butRedStatus == 1));
 
     oled.clearDisplay();
-    oled.print("   " + mode + " MODE  ");
+    oled.print(mode + " MODE");
     oled.display();
 
     delay(300);
@@ -118,9 +121,7 @@ void end(int correctPin) {
     randSequence = false;
 
     oled.clearDisplay();
-    oled.print("  YOU LOST IN   ");
-    oled.setCursor(0, 1);
-    oled.print("    ROUND " + String(count - 1) + "     ");
+    oled.println("YOU LOST IN ROUND " + String(count - 1));
     oled.display();
 
     count = 2;
@@ -141,17 +142,13 @@ void next() {
     oled.clearDisplay();
 
     if(count >= 31) {
-        oled.print("    You beat    ");
-        oled.setCursor(0, 1);
-        oled.print(mode + " MODE!");
+        oled.println("You beat " + mode + " MODE!");
         oled.display();
 
         delay(5000);
         startGame();
     } else {
-        oled.print("    YOU WON     ");
-        oled.setCursor(0, 1);
-        oled.print("    ROUND " + String(count - 1) + "     ");
+        oled.println("YOU WON ROUND " + String(count - 1));
         oled.display();
 
         count++;
@@ -161,9 +158,9 @@ void next() {
 }
 
 void setup() {
-    oled.begin();
-    oled.clearDisplay();
-    oled.display();
+    oled.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+    oled.setTextColor(WHITE);
+    oled.setTextSize(1);
 
     randomSeed(analogRead(A0));
 
