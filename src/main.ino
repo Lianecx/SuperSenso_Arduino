@@ -1,7 +1,9 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include "AnimationBitmaps.cpp"
 
+//CONSTANTS
 const int buzz = 12;
 const int backlight = 2;
 
@@ -20,6 +22,11 @@ const int butYel = 5;
 const int butRed = 6;
 const int butBlue = 7;
 
+const int SPEED = 300;
+const int SCREEN_WIDTH = 128;
+const int SCREEN_HEIGHT = 64;
+
+//VARIABLES
 int butGreenStatus;
 int butYelStatus;
 int butRedStatus;
@@ -32,12 +39,54 @@ int count = 2;
 boolean randSequence = false;
 boolean onlySound = false;
 boolean win = true;
-
 String mode;
-const int SPEED = 300;
 
-Adafruit_SSD1306 oled(128, 64, &Wire, 4);
+//CONSTRUCTOR
+Adafruit_SSD1306 oled(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, 4);
 
+
+//ANIMATIONS
+const unsigned char* start_allArray[28] = {
+        start_frame_00_delay_0,
+        start_frame_01_delay_0,
+        start_frame_02_delay_0,
+        start_frame_03_delay_0,
+        start_frame_04_delay_0,
+        start_frame_05_delay_0,
+        start_frame_06_delay_0,
+        start_frame_07_delay_0,
+        start_frame_08_delay_0,
+        start_frame_09_delay_0,
+        start_frame_10_delay_0,
+        start_frame_11_delay_0,
+        start_frame_12_delay_0,
+        start_frame_13_delay_0,
+        start_frame_14_delay_0,
+        start_frame_15_delay_0,
+        start_frame_16_delay_0,
+        start_frame_17_delay_0,
+        start_frame_18_delay_0,
+        start_frame_19_delay_0,
+        start_frame_20_delay_0,
+        start_frame_21_delay_0,
+        start_frame_22_delay_0,
+        start_frame_23_delay_0,
+        start_frame_24_delay_0,
+        start_frame_25_delay_0,
+        start_frame_26_delay_0,
+        start_frame_27_delay_0
+};
+
+
+//HELPER FUNCTIONS
+void printCentered(const String &string) {
+    int16_t x1, y1;
+    uint16_t w, h;
+    oled.getTextBounds(string, oled.getCursorX(), oled.getCursorY(), &x1, &y1, &w, &h); //calc width of new string
+    oled.setCursor(SCREEN_WIDTH/2 - w/2, oled.getCursorY()); //Subtract half the string's width from half the screen width
+
+    oled.print(string);
+}
 void tone(int ledPin) {
     switch(ledPin) {
         case 8:
@@ -55,6 +104,8 @@ void tone(int ledPin) {
     }
 }
 
+
+//MAIN GAME
 void startGame() {
     for(int i=8; i<13; i++) {
         digitalWrite(i, HIGH);
@@ -65,11 +116,12 @@ void startGame() {
 
     oled.clearDisplay();
     oled.setTextSize(2);
-    oled.println("SuperSenso\n");
+    oled.setCursor(0, 0);
+    printCentered("SuperSenso\n\n");
 
     oled.setTextSize(1);
-    oled.println("Choose difficulty:\n");
-    oled.print("Easy Medium Hard");
+    printCentered("Choose difficulty:\n\n");
+    printCentered("Easy  Medium  Hard");
     oled.display();
 
     do {
@@ -91,8 +143,22 @@ void startGame() {
         }
     } while((butGreenStatus == 1 || butYelStatus == 1) && (butRedStatus == 1 || butBlueStatus == 1) && (butYelStatus == 1 || butRedStatus == 1));
 
+
+    for (int i = 0; i < 3; ++i) {
+        for(auto &frame : start_allArray) {
+            oled.clearDisplay();
+            oled.drawBitmap(SCREEN_WIDTH/3, SCREEN_HEIGHT/5, frame, 48, 48, SSD1306_WHITE);
+            oled.display();
+            delay(0);
+        }
+    }
+
+
     oled.clearDisplay();
-    oled.print(mode + " MODE");
+    oled.setTextSize(3);
+    oled.setCursor(0, SCREEN_HEIGHT/4);
+    printCentered(mode + "\n");
+    printCentered("MODE");
     oled.display();
 
     delay(300);
@@ -102,8 +168,8 @@ void startGame() {
         delay(50);
     }
     noTone(buzz);
-    delay(1000);
 
+    //Animation for only sound
     if(onlySound) {
         for(int i=8; i<13; i++) {
             digitalWrite(i, HIGH);
@@ -121,7 +187,10 @@ void end(int correctPin) {
     randSequence = false;
 
     oled.clearDisplay();
-    oled.println("YOU LOST IN ROUND " + String(count - 1));
+    oled.setTextSize(2);
+    oled.setCursor(0, SCREEN_HEIGHT/3);
+    printCentered("YOU LOST\n");
+    printCentered("IN ROUND " + String(count-1));
     oled.display();
 
     count = 2;
@@ -142,13 +211,20 @@ void next() {
     oled.clearDisplay();
 
     if(count >= 31) {
-        oled.println("You beat " + mode + " MODE!");
+        oled.setTextSize(3);
+        oled.setCursor(0, SCREEN_HEIGHT/4);
+        printCentered("YOU BEAT\n");
+        printCentered(mode + "\n");
+        printCentered("MODE!");
         oled.display();
 
         delay(5000);
         startGame();
     } else {
-        oled.println("YOU WON ROUND " + String(count - 1));
+        oled.setTextSize(2);
+        oled.setCursor(0, SCREEN_HEIGHT/3);
+        printCentered("YOU WON\n");
+        printCentered("ROUND " + String(count - 1));
         oled.display();
 
         count++;
@@ -160,7 +236,6 @@ void next() {
 void setup() {
     oled.begin(SSD1306_SWITCHCAPVCC, 0x3C);
     oled.setTextColor(WHITE);
-    oled.setTextSize(1);
 
     randomSeed(analogRead(A0));
 
